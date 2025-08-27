@@ -1,11 +1,9 @@
-# app.py
 import streamlit as st
 import openai
 import os
 import re
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -14,10 +12,6 @@ if not OPENAI_API_KEY:
     st.stop()
 
 openai.api_key = OPENAI_API_KEY
-
-# ================================================================
-# 1. Initialize Session State
-# ================================================================
 
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = [
@@ -39,9 +33,6 @@ if 'candidate_info' not in st.session_state:
 if 'conversation_stage' not in st.session_state:
     st.session_state.conversation_stage = 'get_name'
 
-# ================================================================
-# 2. Helper Functions
-# ================================================================
 
 def generate_questions_prompt(tech_stack):
     return (
@@ -65,10 +56,6 @@ def get_llm_response(prompt, chat_history):
     except Exception as e:
         return f"I'm sorry, I encountered an error: {e}. Please try again."
 
-# ================================================================
-# 3. Streamlit UI
-# ================================================================
-
 st.title("TalentScout Hiring Assistant")
 st.sidebar.title("TalentScout Assistant")
 st.sidebar.info(
@@ -82,22 +69,13 @@ st.sidebar.info(
     """
 )
 
-#st.sidebar.subheader("Candidate Info")
-#if st.session_state.candidate_info:
- #   for key, value in st.session_state.candidate_info.items():
-  #      st.sidebar.write(f"**{key.capitalize()}:** {value if value else 'Not provided yet'}")
-
-#st.markdown("A chatbot to screen candidates by gathering information and asking technical questions.")
 st.sidebar.title("TalentScout Assistant")
 
 st.markdown("---")
-
-# Display chat history
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-# Handle user input
 if user_input := st.chat_input("Type here..."):
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
@@ -105,12 +83,9 @@ if user_input := st.chat_input("Type here..."):
 
     response_text = ""
 
-    # Conversation ending
     if any(keyword in user_input.lower() for keyword in ["bye", "goodbye", "thanks", "thank you", "stop", "exit"]):
         response_text = "Thank you for your time! Your information has been collected. A hiring manager will review it and get back to you."
         st.session_state.conversation_stage = 'finished'
-
-    # Conversation stages
     elif st.session_state.conversation_stage == 'get_name':
         st.session_state.candidate_info['name'] = user_input
         response_text = "Great! What is your email address?"
@@ -156,20 +131,13 @@ if user_input := st.chat_input("Type here..."):
             questions_response = get_llm_response(prompt, st.session_state.chat_history)
 
         response_text = f"Perfect! Here are some technical questions based on your tech stack:\n\n{questions_response}"
-        #st.session_state.conversation_stage = 'finished'
-        # Only mark finished when user says bye/thanks
         if any(keyword in user_input.lower() for keyword in ["bye", "goodbye", "thanks", "thank you", "stop", "exit"]):
            st.session_state.conversation_stage = 'finished'
 
-
-    # Display assistant response
     if response_text:
         with st.chat_message("assistant"):
             st.write(response_text)
         st.session_state.chat_history.append({"role": "assistant", "content": response_text})
-
-    # Show collected info at the end
     if st.session_state.conversation_stage == 'finished':
         st.markdown("### Candidate Information Collected:")
-        #st.json(st.session_state.candidate_info)
         st.warning("Conversation has ended. Refresh the page to start a new one.")
